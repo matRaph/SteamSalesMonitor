@@ -1,4 +1,4 @@
-# Goblin Scout
+# Steam Sales Monitor
 
 A lightweight Python script that watches your **Steam wishlist** and alerts you on **Telegram** when a game hits a **historical low** price (via [IsThereAnyDeal](https://isthereanydeal.com)).
 
