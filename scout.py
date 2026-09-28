@@ -24,6 +24,10 @@ def game_image_url(game):
 
 
 def sync_mapping(itad, mapping, appids):
+    removed = mapping.prune_not_in_wishlist(appids)
+    for appid, title in removed:
+        print(f"Removed {title} (appid {appid}) — no longer on wishlist")
+
     for appid in appids:
         if not mapping.needs_enrichment(appid):
             continue

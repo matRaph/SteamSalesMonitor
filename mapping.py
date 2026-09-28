@@ -30,6 +30,21 @@ class GameIdMapping:
             entry["image"] = image
         self.data[key] = entry
 
+    def remove(self, appid):
+        key = str(appid)
+        return self.data.pop(key, None)
+
+    def prune_not_in_wishlist(self, appids):
+        wishlist = {str(appid) for appid in appids}
+        removed = []
+        for key in list(self.data.keys()):
+            if key in wishlist:
+                continue
+            entry = self.data.pop(key)
+            title = entry.get("title", key) if isinstance(entry, dict) else key
+            removed.append((key, title))
+        return removed
+
     def needs_enrichment(self, appid):
         entry = self.get(appid)
         if entry is None:
