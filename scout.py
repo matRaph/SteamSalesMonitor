@@ -97,20 +97,27 @@ def send_alerts(alerts, mapping):
         title = mapping.title_for(alert["id"])
         image = mapping.image_for(alert["id"])
         price = alert["current"]["price"]
-        shop = alert["current"]["shop"]["name"]
+        shop = alert["current"]["shop"]
+
+        if not mapping.should_alert(alert["id"], price["amountInt"]):
+            print(f"Skipping {title} — already alerted at this price")
+            continue
+
         response = telegram.send_message(
             photo=image,
             html=template.format(
                 game_title=title,
                 current_price="{:.2f}".format(float(price["amount"])).replace(".", ","),
-                store_name=shop,
+                store_name=shop["name"],
                 offer_url=alert["current"]["url"],
             ),
         )
         if not response["ok"]:
             print(f"Failed to send alert: {response['description']}")
             return
-        print(f"Alert sent: {response['result']['message_id']}")
+        print(f"Alert sent: {response['result']['message_id']} ({title})")
+        mapping.mark_alerted(alert["id"], price["amountInt"], shop["id"])
+        # TODO: see if theres a better way to avoid telegram rate limiting (maybe check for batch sending?)
         time.sleep(2)
 
 
@@ -125,6 +132,8 @@ def run(steam, itad):
 
     print(f"Fetching price overview for {len(mapping.itad_ids())} games")
     overview = itad.get_game_prices_overview(mapping.itad_ids())
+
+    mapping.clear_stale_alerts(overview)
 
     alerts = get_alerts(overview)
     send_alerts(alerts, mapping)
