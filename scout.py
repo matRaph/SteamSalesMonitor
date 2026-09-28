@@ -1,7 +1,7 @@
 import time
 from pathlib import Path
 
-from config import get_env
+from config import NEAR_LOW_MARGIN, get_env
 from mapping import GameIdMapping
 from providers import TelegramProvider
 
@@ -79,9 +79,11 @@ def get_alerts(overview):
         lowest = item.get("lowest")
         if not current or not lowest:
             continue
+        current_price = current["price"]["amountInt"]
+        lowest_price = lowest["price"]["amountInt"]
         if (
-            current["price"]["amountInt"] <= lowest["price"]["amountInt"]
-            and current["price"]["amountInt"] < current["regular"]["amountInt"]
+            current_price <= lowest_price * (1 + NEAR_LOW_MARGIN)
+            and current_price < current["regular"]["amountInt"]
         ):
             alerts.append(item)
     return alerts
