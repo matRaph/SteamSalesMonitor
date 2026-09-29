@@ -20,6 +20,7 @@ class ITADProvider:
     # Shop IDs from ITAD API
     #https://api.isthereanydeal.com/service/shops/v1
     SHOPS_IDS = {
+        "Humble Store": 37,
         "GamersGate": 24,
         "GreenManGaming": 36,
         "Nuuvem": 50,
