@@ -2,6 +2,9 @@ import json
 from pathlib import Path
 from datetime import datetime
 
+from config import NEAR_LOW_MARGIN
+
+
 class GameIdMapping:
     def __init__(self, path="game_id_mapping.json"):
         self.path = Path(path)
@@ -105,9 +108,8 @@ class GameIdMapping:
         if not entry:
             return True
         last = entry.get("last_alert")
-        if not last or not isinstance(last, dict):
-            return True
-        return last.get("price_int") != price_int
+        # One alert per deal cycle; cleared when the price leaves the near-low zone.
+        return not last or not isinstance(last, dict)
 
     def mark_alerted(self, itad_id, price_int, shop_id):
         _, entry = self._entry_ref(itad_id)
@@ -127,6 +129,7 @@ class GameIdMapping:
         for item in overview.get("prices", []):
             seen_ids.add(item["id"])
             current = item.get("current")
+            lowest = item.get("lowest")
             if not current:
                 continue
             _, entry = self._entry_ref(item["id"])
@@ -139,14 +142,30 @@ class GameIdMapping:
                 entry.pop("last_alert", None)
                 dirty = True
                 continue
+
             current_price = current["price"]["amountInt"]
-            if last.get("price_int") != current_price:
-                entry.pop("last_alert", None)
-                dirty = True
-                print(
-                    f"Cleared stale alert for {entry.get('title', item['id'])} "
-                    f"(was {last.get('price_int')}, now {current_price})"
-                )
+            regular_price = current.get("regular", {}).get("amountInt")
+            lowest_price = (
+                lowest["price"]["amountInt"] if lowest and lowest.get("price") else None
+            )
+
+            left_sale = (
+                regular_price is not None and current_price >= regular_price
+            )
+            left_near_low = (
+                lowest_price is not None
+                and current_price > lowest_price * (1 + NEAR_LOW_MARGIN)
+            )
+            if not (left_sale or left_near_low):
+                continue
+
+            entry.pop("last_alert", None)
+            dirty = True
+            reason = "left sale" if left_sale else "left near-low zone"
+            print(
+                f"Cleared stale alert for {entry.get('title', item['id'])} "
+                f"({reason}; was {last.get('price_int')}, now {current_price})"
+            )
 
         for appid, value in list(self.data.items()):
             if not isinstance(value, dict) or not value.get("last_alert"):

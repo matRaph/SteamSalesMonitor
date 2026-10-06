@@ -12,7 +12,7 @@ Built to stay small: no database, no framework, just scripts, a JSON cache, and 
    - GamersGate, GreenManGaming, Nuuvem, Steam
 4. Flags deals where the **current best price among those shops** is at or within **5%** of the **global historical low** (`NEAR_LOW_MARGIN` in `config.py`)
 5. Sends a Telegram message using `templates/alert_deal.html`
-6. Avoids spam: stores `last_alert` (price + shop) and clears it when the price changes, so the same historical low can notify again after the sale ends
+6. Avoids spam: stores `last_alert` (price + shop) and clears it only when the deal leaves the near-low / on-sale zone, so tiny price ticks do not re-notify, but a later sale can
 
 ## Setup
 
